@@ -116,6 +116,11 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		return head;
 		
 	}
+	
+	@Override
+	public boolean contains(Object o) {
+		return indexOf(o) != -1;
+	}
 
 	@Override
 	public int size() {
@@ -171,9 +176,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		if(this.comparator.compare(element,parent)<0) {
 			this.queue[index] = parent;
 			this.queue[p] = element;
-			if(p!=0) {
-				this.percolateUpUsingComparator(p, element);
-			}
+			this.percolateUpUsingComparator(p, element);
 		} else {
 			this.queue[index] = element;
 		}
@@ -190,9 +193,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		if(key.compareTo(parent)<0) {
 			this.queue[index] = parent;
 			this.queue[p] = element;
-			if(p!=0) {
-				this.percolateUpComparable(p,element);
-			}
+			this.percolateUpComparable(p,element);
 		} else {
 			this.queue[index] = element;
 		}
@@ -234,6 +235,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @return the object removed
 	 */
+	@SuppressWarnings("unchecked")
 	public E removeAt(int index) {
 		assert index >= 0 && index < size;
 		this.modCount++;
@@ -273,11 +275,20 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @param element
 	 */
+	@SuppressWarnings("unchecked")
 	private void percolateDownWithComparator(int index, E element) {
 		if(index==this.size) {
 			return;
 		}
-		
+		int childIndex = this.getSmallerChildComparator(index);
+		if(childIndex!=-1) {
+			E child = (E) this.queue[childIndex];
+			if(this.comparator.compare(element,child)>0) {
+				this.queue[childIndex] = element;
+				this.queue[index] = child;
+				this.percolateDownWithComparator(childIndex, element);
+			}
+		}
 		
 	}
 	
@@ -286,11 +297,21 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @param element
 	 */
+	@SuppressWarnings("unchecked")
 	private void percolateDownComparable(int index, E element) {
 		if(index==this.size) {
 			return;
 		}
 		Comparable<? super E> key = (Comparable<? super E>) element;
+		int childIndex = this.getSmallerChildComparable(index);
+		if(childIndex!=-1) {
+			E child = (E) this.queue[childIndex];
+			if(key.compareTo(child)>0) {
+				this.queue[childIndex] = element;
+				this.queue[index] = child;
+				this.percolateDownComparable(childIndex, element);
+			}
+		}
 	}
 	
 	/**
@@ -310,6 +331,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @return index of smaller child of -1 if no children
 	 */
+	@SuppressWarnings("unchecked")
 	private int getSmallerChildComparator(int index) {
 		int c = 0;
 		int leftChild = (2*index)+1;
@@ -335,6 +357,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @return index of a smaller child or -1 if no children
 	 */
+	@SuppressWarnings("unchecked")
 	private int getSmallerChildComparable(int index) {
 		int c = 0;
 		int leftChild = (2*index)+1;
@@ -367,6 +390,22 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		}
 		this.size=0;
 	}
+	
+	@Override
+	public <T extends Object> T[] toArray(T[] a) {
+		if(a.length<size) {
+			return (T[]) Arrays.copyOf(this.queue, this.size);
+		} else {
+			System.arraycopy(this.queue,0,a,0,this.size);
+			return a;
+		}
+	}
+	
+	@Override
+	public Object[] toArray() {
+		return Arrays.copyOf(this.queue,this.size);
+	};
+	
 	
 	@Override
 	public Iterator<E> iterator() {
