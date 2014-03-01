@@ -300,13 +300,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 */
 	private int getParent(int index) {
 		// even index
-		int p = 0;
-		if(index%2==0) {
-			p = (index-2)/2;
-		} else {
-			p = (index-1)/2;
-		}
-		return p;
+		return (index-1) >>> 1;
 	}
 	
 	/**
@@ -314,13 +308,15 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * Checks to see which one is smaller and returns the index
 	 * It will return the index of a null item if its at the end
 	 * @param index
-	 * @return index of smaller child
+	 * @return index of smaller child of -1 if no children
 	 */
 	private int getSmallerChildComparator(int index) {
 		int c = 0;
 		int leftChild = (2*index)+1;
 		int rightChild = (2*index)+2;
-		if(this.queue[rightChild]==null) {
+		if (this.queue[leftChild]==null) {
+			c = -1;
+		} else if(this.queue[rightChild]==null) {
 			c = leftChild;
 		} else {
 			if(this.comparator.compare((E)this.queue[leftChild],(E)this.queue[rightChild])<0) {
@@ -332,11 +328,20 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		return c;
 	}
 	
+	/**
+	 * Calculates the children for a given index
+	 * Checks to see which one is smaller and returns the index
+	 * It will return the index of a null item if its at the end
+	 * @param index
+	 * @return index of a smaller child or -1 if no children
+	 */
 	private int getSmallerChildComparable(int index) {
 		int c = 0;
 		int leftChild = (2*index)+1;
 		int rightChild = (2*index)+2;
-		if(this.queue[rightChild]==null) {
+		if (this.queue[leftChild]==null) {
+			c = -1;
+		} else if(this.queue[rightChild]==null) {
 			c = leftChild;
 		} else {
 			Comparable<? super E> key = (Comparable<? super E>) this.queue[leftChild];
