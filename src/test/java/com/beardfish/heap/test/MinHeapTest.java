@@ -1,7 +1,5 @@
 package com.beardfish.heap.test;
 
-import java.util.Arrays;
-
 import org.junit.Assert;
 import org.junit.Test;
 

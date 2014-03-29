@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.ConcurrentModificationException;
 
 /**
  * MinHeap that stores the minimum value at the top according to the natural
@@ -68,20 +69,20 @@ public class MinHeap<E> extends AbstractQueue<E> {
 
 	@Override
 	public boolean offer(E object) {
-		// TODO Auto-generated method stub
 		if(object==null) {
 			throw new NullPointerException();
 		}
 		/* update the modCount to make sure you invalidate the iterator */
 		this.modCount++;
 		
-		int i = this.size;
+		int i = this.size();
 		
 		/* check the capacity of the array */
 		if(i>=this.queue.length) {
 			grow(i+1);
 		}
-		
+
+        /* update the size */
 		this.size = i + 1;
 		
 		if(i==0) {
@@ -93,25 +94,29 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		return true;
 	}
 
+    /**
+     * Retrieves the head of the queue
+     * @return the head of the queue
+     */
 	@Override
 	public E peek() {
-		// TODO Auto-generated method stub
-		if (this.size == 0) {
+		if (this.size() == 0) {
 			return null;
 		}
 		return (E) this.queue[0];
 	}
 
+    /**
+     * Retrieves the removes the head of the heap
+     * @return the removed head or null
+     */
 	@Override
 	public E poll() {
-		// TODO Auto-generated method stub
 		if(this.size==0) {
 			return null;
 		}
-		
-		int newSize = --size;
-		this.modCount++;
-		E head = (E) this.queue[0];
+
+        E head = this.removeAt(0);
 		
 		return head;
 		
@@ -124,7 +129,6 @@ public class MinHeap<E> extends AbstractQueue<E> {
 
 	@Override
 	public int size() {
-		// TODO Auto-generated method stub
 		return this.size;
 	}
 
@@ -134,7 +138,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	
 	/**
 	 * Grow the heap by the integer specified
-	 * @param i
+	 * @param minCapacity the minimum capacity to increase by
 	 */
 	public void grow(int minCapacity) {
 		if(minCapacity<0) {
@@ -235,9 +239,8 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	 * @param index
 	 * @return the object removed
 	 */
-	@SuppressWarnings("unchecked")
-	public E removeAt(int index) {
-		assert index >= 0 && index < size;
+	private E removeAt(int index) {
+		assert index >= 0 && index < this.size();
 		this.modCount++;
 		int s = --size;
 		E element = (E) this.queue[index];
@@ -250,6 +253,8 @@ public class MinHeap<E> extends AbstractQueue<E> {
 			this.queue[s] = null;
 			this.percolateDown(index,(E) this.queue[index]);
 		}
+        /* set the new size */
+        this.size = s;
 		return element;
 		
 	}
@@ -316,6 +321,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	
 	/**
 	 * Retrieve the parent index of a given item
+     * Subtracting 1 and doing an unsigned right shift is the same as dividing by 2 and doing the floor operation
 	 * @param index
 	 * @return the parent index
 	 */
@@ -409,7 +415,6 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	
 	@Override
 	public Iterator<E> iterator() {
-		// TODO Auto-generated method stub
 		return new Itr();
 	}
 	
@@ -421,15 +426,18 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		
 		private E lastRetElt = null;
 
+        private int expectedModCount = MinHeap.this.modCount;
+
 		@Override
 		public boolean hasNext() {
-			// TODO Auto-generated method stub
 			return this.cursor < size();
 		}
 
 		@Override
 		public E next() {
-			// TODO Auto-generated method stub
+			if(this.expectedModCount!=MinHeap.this.modCount) {
+                throw new ConcurrentModificationException();
+            }
 			return null;
 		}
 
