@@ -1,11 +1,6 @@
 package com.beardfish.heap;
 
-import java.util.AbstractQueue;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.ConcurrentModificationException;
+import java.util.*;
 
 /**
  * MinHeap that stores the minimum value at the top according to the natural
@@ -66,6 +61,11 @@ public class MinHeap<E> extends AbstractQueue<E> {
 			this.size = cArray.length;
 		}
 	}
+
+    @Override
+    public boolean add(E object) {
+        return this.offer(object);
+    }
 
 	@Override
 	public boolean offer(E object) {
@@ -259,6 +259,16 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		
 	}
 
+    private boolean removeEq(Object o) {
+        for(int i = 0;i<this.size();i++) {
+            if(o==queue[i]) {
+                removeAt(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
 	
 	/**
 	 * percolateDown until you find that both children are less than the element
@@ -390,7 +400,7 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	}
 	
 	public void clear() {
-		modCount++;
+		this.modCount++;
 		for(int i = 0; i< this.size; i++) {
 			this.queue[i] = null;
 		}
@@ -412,7 +422,8 @@ public class MinHeap<E> extends AbstractQueue<E> {
 		return Arrays.copyOf(this.queue,this.size);
 	};
 	
-	
+
+    /* iterator provides no guarantees of the order of iteration */
 	@Override
 	public Iterator<E> iterator() {
 		return new Itr();
@@ -421,16 +432,20 @@ public class MinHeap<E> extends AbstractQueue<E> {
 	private final class Itr implements Iterator<E> {
 		
 		private int cursor = 0;
-		
+
+        /* keeps track of the index of the cursor before a call to next() */
 		private int lastRet = -1;
-		
+
+        /* keeps track of the last element returned by the forget me not */
 		private E lastRetElt = null;
+
+        private ArrayDeque<E> forgetMeNot = null;
 
         private int expectedModCount = MinHeap.this.modCount;
 
 		@Override
 		public boolean hasNext() {
-			return this.cursor < size();
+			return this.cursor < size() || (forgetMeNot!=null && !forgetMeNot.isEmpty());
 		}
 
 		@Override
@@ -438,13 +453,46 @@ public class MinHeap<E> extends AbstractQueue<E> {
 			if(this.expectedModCount!=MinHeap.this.modCount) {
                 throw new ConcurrentModificationException();
             }
-			return null;
+            if(this.cursor< MinHeap.this.size()) {
+                return (E) queue[lastRet = this.cursor++];
+            }
+            /* need to make sure that if there are removals that elements are not forgotten */
+            if(forgetMeNot !=null) {
+                this.lastRet = -1;
+                this.lastRetElt = this.forgetMeNot.poll();
+                if(this.lastRetElt!=null) {
+                    return this.lastRetElt;
+                }
+            }
+            throw new NoSuchElementException();
 		}
 
 		@Override
 		public void remove() {
-			// TODO Auto-generated method stub
-			
+            if(this.expectedModCount!=MinHeap.this.modCount) {
+                throw new ConcurrentModificationException();
+            }
+            if(this.lastRet!=-1) {
+                E moved = MinHeap.this.removeAt(this.lastRet);
+                this.lastRet=-1;
+                if(moved==null) {
+                    this.cursor--;
+                } else {
+                    /* need to add the element to the forgetMetNot because iteration should cover all elements */
+                    if(forgetMeNot==null) {
+                        forgetMeNot = new ArrayDeque<E>();
+                    }
+                    /* save for later iteration */
+                    forgetMeNot.add(moved);
+                }
+            } else if (lastRetElt!=null) {
+                MinHeap.this.removeEq(lastRetElt);
+                lastRetElt=null;
+            } else {
+                throw new IllegalStateException();
+            }
+            this.expectedModCount=modCount;
+
 		}
 		
 	}
